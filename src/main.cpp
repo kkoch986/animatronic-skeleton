@@ -24,9 +24,32 @@
 // 14 - Skeleton 5 Input 1
 // 15 - Skeleton 6 Input 2
 // 16 - Skeleton 7 Input 3
-// 17 - 
+// 17 - Par Light 1 CH 1
+// 18 - Par Light 1 CH 2
+// 19 - Par Light 1 CH 3
+// 20 - Par Light 1 CH 4
+// 21 - Par Light 1 CH 5
+// 22 - Par Light 1 CH 6
+// 23 - Par Light 1 CH 7
+
 
 // All channels received from renard are also proxied directly to DMX
+// Par light channel descriptions:
+// CH1 - master dimmer (off -> on)
+// CH2 - Red Dimming
+// CH3 - Green Dimming
+// CH4 - Blue Dimming
+// CH5 - Flicker mode:
+//      0 - 7   | No Flicker
+//      8 - 255 | Strobe, from slow to fast
+// CH6 - Control Mode
+//       0 -  10   | Manual Control
+//      11 -  60   | Color Selection
+//      61 - 110   | Gradual Fade
+//     111 - 160   | Variable Pulse
+//     161 - 210   | Jump Change
+//     211 - 255   | Sound activated mode
+// CH7 - Color selection / discoloration speed, from slow to fast
 
 #define SERVO_FREQ 50 
 
