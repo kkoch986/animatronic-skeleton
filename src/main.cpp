@@ -6,51 +6,6 @@
 #include "TwoAxisSkeleton.h"
 #include "ControlModes.h"
 
-// Main Skeleton Show Sketch
-// DMX Channels:
-//  1 - MiniSkeleton 1 control mode - see CONTROL_MODE_* constants
-//  2 - MiniSkeleton 1 Input 1  0 - 255
-//  3 - MiniSkeleton 1 Input 2  0 - 255
-//  4 - MiniSkeleton 1 Input 3  0 - 255
-//  5 - Skeleton 2 control mode - see CONTROL_MODE_* constants
-//  6 - Skeleton 2 Input 1 
-//  7 - Skeleton 2 Input 2
-//  8 - Skeleton 2 Input 3
-//  9 - Skeleton 3 control mode
-// 10 - Skeleton 3 Input 1
-// 11 - Skeleton 3 Input 2
-// 12 - Skeleton 3 Input 3
-// 13 - Skeleton 4 control mode
-// 14 - Skeleton 5 Input 1
-// 15 - Skeleton 6 Input 2
-// 16 - Skeleton 7 Input 3
-// 17 - Par Light 1 CH 1
-// 18 - Par Light 1 CH 2
-// 19 - Par Light 1 CH 3
-// 20 - Par Light 1 CH 4
-// 21 - Par Light 1 CH 5
-// 22 - Par Light 1 CH 6
-// 23 - Par Light 1 CH 7
-
-
-// All channels received from renard are also proxied directly to DMX
-// Par light channel descriptions:
-// CH1 - master dimmer (off -> on)
-// CH2 - Red Dimming
-// CH3 - Green Dimming
-// CH4 - Blue Dimming
-// CH5 - Flicker mode:
-//      0 - 7   | No Flicker
-//      8 - 255 | Strobe, from slow to fast
-// CH6 - Control Mode
-//       0 -  10   | Manual Control
-//      11 -  60   | Color Selection
-//      61 - 110   | Gradual Fade
-//     111 - 160   | Variable Pulse
-//     161 - 210   | Jump Change
-//     211 - 255   | Sound activated mode
-// CH7 - Color selection / discoloration speed, from slow to fast
-
 #define SERVO_FREQ 50 
 
 #define SK1_PWM_TILT_SERVO_INDEX 0
