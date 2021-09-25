@@ -11,6 +11,6 @@ upload:
 	${PIO} run --target=upload ${ENVSTR}
 
 logs: 
-	${PIO} device monitor -b 115200 ${ENVSTR}
+	${PIO} device monitor -b 57600 ${ENVSTR}
 
 .PHONY: compile upload logs
