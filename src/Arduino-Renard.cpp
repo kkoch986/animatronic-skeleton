@@ -16,80 +16,90 @@ boolean Renard::receive(){
 	//create a return flag
 	uint8_t rtn = false;
 	uint8_t ren_temp = 0;
+	uint8_t raw = 0;
 
 	//for now let's block till we empty the serial buffer
 	while(_serial->available() > 0){
-	
-		
 		switch(rx_state){
 			case WAITING: //look for sync
-			
-				if (_serial->read() == 0x7E){
-					rx_state=ADDRESS;
-					//send sync						
-					_serial->write(0x7E);
-					
+				raw = _serial->read();
+				_serial->print("WAITING read: ");
+				_serial->println(raw, HEX);
+				if (raw == 0x7E){
+					_serial->println("WAITING -> ADDRESS");
+					rx_state = ADDRESS;
 				}			
 			break;
 			case ADDRESS: //look for my address
-			
 				ren_temp = _serial->read();
-				
-				if (ren_temp == 0x80){
+				_serial->print("ADRESS read: ");
+				_serial->println(ren_temp, HEX);
+				if (ren_temp >= 0x80){
 					rx_state = STRIPPING;
-					rx_channel = 0;
-					
-				}
-				else if (ren_temp > 0x80){ //not my address, subtract 1 and forward rest
-					rx_state = FORWARDING;							
-					_serial->write(--ren_temp);
+					rx_channel = 8 * (ren_temp - 0x80);
+					_serial->print("ADDRESS -> STRIPPING @ ");
+					_serial->println(rx_channel, HEX);
+
+					if(rx_channel > size) {
+						_serial->println("RX_CHAN exceeds size, moving to FORWARDING");
+						rx_state = FORWARDING;
+					}
 				}
 			break;
 			case STRIPPING: //peel off my data
-			
 				ren_temp = _serial->read();
-			
-				if (ren_temp == 0x7D) //pad byte, drop
+				_serial->print("STRIP: ");
+				_serial->println(ren_temp, HEX);
+
+				if (ren_temp == 0x7D) { //pad byte, drop
+					_serial->println("DROP PAD BYTE");
 					break;
-				if (ren_temp == 0x7F)//escape byte
+				} else if (ren_temp == 0x7F) { //escape byte
+					_serial->println("STRIPPING -> ESCAPE");
 					rx_state = ESCAPE;
-				else {
+				} else if (ren_temp == 0x7E) { // starting a new frame
+					_serial->println("STRIPPING -> ADDRESS");
+					rx_state = ADDRESS;
+					rtn = true;
+				} else {
 					//write brightness value into memory
+					_serial->print("STORE ");
+					_serial->print(ren_temp, HEX);
+					_serial->print(" @ ");
+					_serial->println(rx_channel);
 					*(address+rx_channel++) = ren_temp;
 					
 					//check if last value	
 					if(rx_channel == size){
-						//set Serial state machine to forward rest
-						rx_state = FORWARDING;							
-						_serial->write(0x80);	
+						_serial->println("STRIPPING -> FORWARDING");
+						rx_state = FORWARDING;
 						rtn = true;
 					}			
 				}							
 			break;
 			case ESCAPE: //peel off escaped byte			
-			
-				*(address+rx_channel++) = _serial->read() + 0x4E;
-				
-				if(rx_channel == size){
+				raw = _serial->read();
+				_serial->print("ESCAPE read: ");
+				_serial->println(raw, HEX);
+				*(address+rx_channel++) = raw + 0x4E;
+				if(rx_channel >= size){
 					rx_state = FORWARDING;						
-					_serial->write(0x80);
 					rtn = true;
-				}			
-				else
+				} else {
 					rx_state = STRIPPING;
+				}
 			break;
 			case FORWARDING: //forward rest
-			
 				ren_temp = _serial->read();
-			
-				if(ren_temp == 0x7E) 
-					rx_state = ADDRESS;						
-				_serial->write(ren_temp);
-				
+				_serial->print("FORWARDING read: ");
+				_serial->println(ren_temp, HEX);
+				if(ren_temp == 0x7E) {
+					rx_state = ADDRESS;
+				}
 			break;
 		}    
+		_serial->println("Exiting loop");
 	}
-	
 	return rtn;
 }
 
