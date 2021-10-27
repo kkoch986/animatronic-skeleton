@@ -40,42 +40,43 @@ There are some primary models:
 |   14    | Skeleton4 | Control Mode | See CONTROL_MODE_* constants |
 |   15    | Skeleton4 | Input 1      | Set Pan                      |
 |   16    | Skeleton4 | Input 2      | Set Tilt                     |
-|   17    | Skeleton4 | Input 3      | Set Jaw (closed -> open)     |
-|   18    | ParLight1 | CH 1         | Master Dimmer                |
-|   19    | ParLight1 | CH 2         | Red Dimming                  |
-|   20    | ParLight1 | CH 3         | Green Dimming                |
-|   21    | ParLight1 | CH 4         | Blue Dimming                 |
-|   22    | ParLight1 | CH 5         | Flicker Mode                 |
-|   23    | ParLight1 | CH 6         | Control Mode                 |
-|   24    | ParLight1 | CH 7         | Color Selection speed        |
-|   25    | ParLight2 | CH 1         | Master Dimmer                |
-|   26    | ParLight2 | CH 2         | Red Dimming                  |
-|   27    | ParLight2 | CH 3         | Green Dimming                |
-|   28    | ParLight2 | CH 4         | Blue Dimming                 |
-|   29    | ParLight2 | CH 5         | Flicker Mode                 |
-|   30    | ParLight2 | CH 6         | Control Mode                 |
-|   31    | ParLight2 | CH 7         | Color Selection speed        |
-|   32    | ParLight3 | CH 1         | Master Dimmer                |
-|   33    | ParLight3 | CH 2         | Red Dimming                  |
-|   34    | ParLight3 | CH 3         | Green Dimming                |
-|   35    | ParLight3 | CH 4         | Blue Dimming                 |
-|   36    | ParLight3 | CH 5         | Flicker Mode                 |
-|   37    | ParLight3 | CH 6         | Control Mode                 |
-|   38    | ParLight3 | CH 7         | Color Selection speed        |
-|   39    | ParLight4 | CH 1         | Master Dimmer                |
-|   40    | ParLight4 | CH 2         | Red Dimming                  |
-|   41    | ParLight4 | CH 3         | Green Dimming                |
-|   42    | ParLight4 | CH 4         | Blue Dimming                 |
-|   43    | ParLight4 | CH 5         | Flicker Mode                 |
-|   44    | ParLight4 | CH 6         | Control Mode                 |
-|   45    | ParLight4 | CH 7         | Color Selection speed        |
-|   46    | FogMchine | Ch 1         | Fog Burst (off -> max)       |
-|   47    | FogMchine | Ch 2         | Red LED Value                |
-|   48    | FogMchine | Ch 3         | Green LED Value              |
-|   49    | FogMchine | Ch 4         | Blue LED Value               |
-|   50    | FogMchine | Ch 5         | LED Strobe control           |
-|   51    | FogMchine | Ch 6         | LED Brightness control (?)   |
-|   52    | FogMchine | Ch 7         | LED Sound control (?)        |
+|   17    | Skeleton4 | Input 3      | Set Yaw                      |
+|   18    | Skeleton4 | Input 4      | Set Jaw (closed -> open)     |
+|   19    | ParLight1 | CH 1         | Master Dimmer                |
+|   20    | ParLight1 | CH 2         | Red Dimming                  |
+|   21    | ParLight1 | CH 3         | Green Dimming                |
+|   22    | ParLight1 | CH 4         | Blue Dimming                 |
+|   23    | ParLight1 | CH 5         | Flicker Mode                 |
+|   24    | ParLight1 | CH 6         | Control Mode                 |
+|   25    | ParLight1 | CH 7         | Color Selection speed        |
+|   26    | ParLight2 | CH 1         | Master Dimmer                |
+|   27    | ParLight2 | CH 2         | Red Dimming                  |
+|   28    | ParLight2 | CH 3         | Green Dimming                |
+|   29    | ParLight2 | CH 4         | Blue Dimming                 |
+|   30    | ParLight2 | CH 5         | Flicker Mode                 |
+|   31    | ParLight2 | CH 6         | Control Mode                 |
+|   32    | ParLight2 | CH 7         | Color Selection speed        |
+|   33    | ParLight3 | CH 1         | Master Dimmer                |
+|   34    | ParLight3 | CH 2         | Red Dimming                  |
+|   35    | ParLight3 | CH 3         | Green Dimming                |
+|   36    | ParLight3 | CH 4         | Blue Dimming                 |
+|   37    | ParLight3 | CH 5         | Flicker Mode                 |
+|   38    | ParLight3 | CH 6         | Control Mode                 |
+|   39    | ParLight3 | CH 7         | Color Selection speed        |
+|   40    | ParLight4 | CH 1         | Master Dimmer                |
+|   41    | ParLight4 | CH 2         | Red Dimming                  |
+|   42    | ParLight4 | CH 3         | Green Dimming                |
+|   43    | ParLight4 | CH 4         | Blue Dimming                 |
+|   44    | ParLight4 | CH 5         | Flicker Mode                 |
+|   45    | ParLight4 | CH 6         | Control Mode                 |
+|   46    | ParLight4 | CH 7         | Color Selection speed        |
+|   47    | FogMchine | Ch 1         | Fog Burst (off -> max)       |
+|   48    | FogMchine | Ch 2         | Red LED Value                |
+|   49    | FogMchine | Ch 3         | Green LED Value              |
+|   50    | FogMchine | Ch 4         | Blue LED Value               |
+|   51    | FogMchine | Ch 5         | LED Strobe control           |
+|   52    | FogMchine | Ch 6         | LED Brightness control (?)   |
+|   53    | FogMchine | Ch 7         | LED Sound control (?)        |
 
 ## DMX Channel Descriptions
 

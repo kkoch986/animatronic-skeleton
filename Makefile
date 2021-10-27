@@ -1,4 +1,5 @@
 PIO=${HOME}/.local/bin/pio
+BAUDRATE=115200
 ENVSTR=
 ifdef PIOENV
 	ENVSTR="-e"${PIOENV}
@@ -11,6 +12,6 @@ upload:
 	${PIO} run --target=upload ${ENVSTR}
 
 logs: 
-	${PIO} device monitor -b 57600 ${ENVSTR}
+	${PIO} device monitor -b ${BAUDRATE} ${ENVSTR}
 
 .PHONY: compile upload logs
