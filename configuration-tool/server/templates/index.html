@@ -1,0 +1,182 @@
+<script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
+
+<!-- TODO: figure out how to get the templates in separate files -->
+<!-- Connection List Template -->
+{{ define "connections" }}
+  <ul>
+  {{range $address, $conns := .}}
+		<li>
+      @{{$address}} ({{$conns | len}} connections)
+      <ul>
+        {{range $conns}}
+          <li>
+            {{.RemoteAddr}}<br />
+            (active for {{.FirstActive | timeSince}})<br />
+            (last ping {{.LastPing | timeSince}} ago)<br />
+            (<a
+              href="#"
+              hx-get="/connections/{{$address}}/{{.RemoteAddr}}"
+              hx-trigger="click"
+              hx-swap="outerHTML"
+              hx-target="#editconnection">edit</a>)
+          </li>
+        {{end}}
+    </li>
+  {{end}}
+  </ul>
+{{ end }}
+
+<!-- Edit Connection Template -->
+{{ define "editConnection" }}
+<div
+  id="editconnection"
+  hx-get="/connections/{{.address}}/{{.remoteAddr | urlquery}}"
+  hx-trigger="every 2s"
+  hx-swap="outerHTML"
+>
+  <h1>Manage Connection Config</h1>
+  <h3>{{.remoteAddr}} [@{{.address}}]</h3>
+  <small>as of {{.asOf}} (last duration {{.duration}}s)</small>
+
+  <h2>Motors</h2>
+  {{ $address := .address }}
+  {{ $remoteAddr := .remoteAddr }}
+  <table border="1" style="min-width:600;">
+    <thead>
+      <tr>
+        <th>Motor</th>
+        <th>Label</th>
+        <th>Enabled</th>
+        <th>Lower Limit</th>
+        <th>Upper Limit</th>
+        <th>Idle</th>
+        <th>Smoothing</th>
+        <th>Current</th>
+        <th>Target</th>
+        <th>Arrived</th>
+        <th>Edit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range $index, $motor := .motors }}
+      <tr>
+        <td>{{$index}}</td>
+        <td>{{$motor.Label}}</td>
+        <td>{{$motor.Enabled}}</td>
+        <td>{{$motor.LowerLimit}}</td>
+        <td>{{$motor.UpperLimit}}</td>
+        <td>{{$motor.IdlePosition}}</td>
+        <td>{{$motor.SmoothingFactor}}</td>
+        <td>{{$motor.CurrentPosition}}</td>
+        <td>{{$motor.TargetPosition}}</td>
+        <td>{{$motor.Arrived}}</td>
+        <td>
+          <a
+            href="#"
+            hx-get="/connections/{{$address}}/{{$remoteAddr | urlquery}}/{{$index}}"
+            hx-trigger="click"
+            hx-swap="outerHTML"
+            hx-target="#editmotor"
+          >
+            edit
+          </a>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  <br />
+  <br />
+  <form hx-post="/connections/{{.address}}/{{.remoteAddr | urlquery}}" hx-target="#editconnection" hx-swap="outerHTML">
+    <button name="action" value="commit" type="submit">Commit State</button>
+    <button name="action" value="restore" type="submit">Restore State</button>
+  </form>
+
+  <br />
+  <hr />
+</div>
+{{ end }}
+
+<!-- Edit Motor Template -->
+{{ define "editMotor" }}
+<div id="editmotor">
+  <h2>Edit Motor {{.index}}</h2>
+  <form hx-put="/connections/{{.address}}/{{.remoteAddr | urlquery}}/{{.index}}" hx-target="#editmotor" hx-swap="outerHTML">
+    <label for="enabled">Enabled ({{.motor.Enabled}})</label>
+    <input
+      name="stringValue"
+      id="enabled"
+      type="checkbox"
+      min="0"
+      max="255"
+      {{.motor.Enabled | checked}} />
+    <br />
+    <button name="action" value="enable" type="submit">Update</button>
+  </form>
+  <form hx-put="/connections/{{.address}}/{{.remoteAddr | urlquery}}/{{.index}}" hx-target="#editmotor" hx-swap="outerHTML">
+    <label for="label">Label</label>
+    <input
+      name="stringValue"
+      id="label"
+      type="text"
+      value="{{.motor.Label}}" />
+    <br />
+    <button name="action" value="label" type="submit">Update</button>
+  </form>
+  <form hx-put="/connections/{{.address}}/{{.remoteAddr | urlquery}}/{{.index}}" hx-target="#editmotor" hx-swap="outerHTML">
+    <label for="currentPosition">Position ({{.motor.TargetPosition}})</label>
+    <input
+      name="numericValue"
+      id="currentPosition"
+      type="range"
+      min="0"
+      max="255"
+      value="{{.motor.TargetPosition}}"
+      class="slider" />
+    <br />
+    <button name="action" value="move" type="submit">Move</button>
+    <button name="action" value="set" type="submit">Set</button>
+  </form>
+  <form hx-put="/connections/{{.address}}/{{.remoteAddr | urlquery}}/{{.index}}" hx-target="#editmotor" hx-swap="outerHTML">
+    <label for="lowerLimit">Lower Limit ({{.motor.LowerLimit}})</label>
+    <input
+      name="numericValue"
+      id="lowerLimit"
+      type="range"
+      min="0"
+      max="255"
+      value="{{.motor.LowerLimit}}"
+      class="slider" />
+    <br />
+    <button name="action" value="lowerlimit" type="submit">Update</button>
+  </form>
+  <form hx-put="/connections/{{.address}}/{{.remoteAddr | urlquery}}/{{.index}}" hx-target="#editmotor" hx-swap="outerHTML">
+    <label for="upperLimit">Upper Limit ({{.motor.UpperLimit}})</label>
+    <input
+      name="numericValue"
+      id="upperLimit"
+      type="range"
+      min="0"
+      max="255"
+      value="{{.motor.UpperLimit}}"
+      class="slider" />
+    <br />
+    <button name="action" value="upperlimit" type="submit">Update</button>
+  </form>
+</div>
+{{end}}
+
+<!-- BEGIN PAGE CONTENT -->
+<div style="display: flex; width: 100%; min-height:100%;">
+  <div style="flex:1; padding-right: 10px; border-right: 1px solid black;">
+    <h1>Connections</h1>
+    <div hx-get="/connections" hx-trigger="every 2s">
+      {{template "connections" .connections}}
+    </div>
+  </div>
+  <div style="flex:10; padding: 10px;">
+    <div id="editconnection"></div>
+    <div id="editmotor"></div>
+  </div>
+</div>
+

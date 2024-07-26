@@ -1,0 +1,245 @@
+#include "servo_controller.h"
+#ifdef ENABLE_DEBUG
+#include <Arduino.h>
+#endif
+
+Preferences prefs;
+
+bool ServoController::setup() {
+  byte err;
+  Wire.begin(PCA9685_I2C_SDA, PCA9685_I2C_SCL);
+  pwmController.resetDevices();
+  pwmController.init();
+#ifdef PCA9685_ENABLE_DEBUG_OUTPUT
+  pwmController.printModuleInfo();
+#endif
+  pwmController.setPWMFreqServo();
+  err = pwmController.getLastI2CError();
+
+  StateRestoreStatus srs = restoreFromStateDump();
+  if (srs != SRS_OK) {
+    for (int i = 0; i < SERVO_COUNT; i++) {
+      lowerLimit[i] = 0;
+      upperLimit[i] = 255;
+      defaultLabel(i, labels[i]);
+
+      // set arrived = true so nothing moves at first
+      arrived[i] = true;
+      enabled[i] = true;
+      targetValue[i] = pwmForVal(i, 0);
+      currentValue[i] = pwmForVal(i, 127);
+    }
+  }
+
+  pwmController.setChannelPWM(13, 4096);
+  pwmController.setChannelPWM(14, 0);
+  pwmController.setChannelPWM(15, 0);
+  delay(1000);
+  pwmController.setChannelPWM(13, 0);
+  pwmController.setChannelPWM(14, 4096);
+  pwmController.setChannelPWM(15, 0);
+  delay(1000);
+  pwmController.setChannelPWM(13, 0);
+  pwmController.setChannelPWM(14, 0);
+  pwmController.setChannelPWM(15, 4096);
+  delay(1000);
+  pwmController.setChannelPWM(13, 4096);
+  pwmController.setChannelPWM(14, 4096);
+  pwmController.setChannelPWM(15, 4096);
+  return err == 0;
+}
+
+uint16_t ServoController::pwmForVal(byte index, byte val) {
+  return pwmServos[index].pwmForAngle(map(
+      map(val, 0, 255, lowerLimit[index], upperLimit[index]), 0, 255, -90, 90));
+}
+
+void ServoController::loop() {
+  uint32_t currentMillis = millis();
+  bool updatePWM = currentMillis - lastMillis >= PWM_UPDATE_INTERVAL_MS;
+  if (updatePWM) {
+    for (int i = 0; i < SERVO_COUNT; i++) {
+      if (!enabled[i]) {
+        continue;
+      }
+      if (!arrived[i]) {
+        if (currentValue[i] < targetValue[i]) {
+          currentValue[i] =
+              ceil(0.8 * currentValue[i]) + ceil(0.2 * targetValue[i]);
+          pwmController.setChannelPWM(i, currentValue[i]);
+#ifdef ENABLE_DEBUG
+          Serial.printf("set channel pwm %d %d\n", i, currentValue[i]);
+#endif
+        } else if (currentValue[i] > targetValue[i]) {
+          currentValue[i] =
+              floor(0.8 * currentValue[i]) + floor(0.2 * targetValue[i]);
+          pwmController.setChannelPWM(i, currentValue[i]);
+#ifdef ENABLE_DEBUG
+          Serial.printf("set channel pwm %d %d\n", i, currentValue[i]);
+#endif
+        } else {
+          pwmController.setChannelPWM(i, currentValue[i]);
+#ifdef ENABLE_DEBUG
+          Serial.printf("set channel pwm %d %d\n", i, currentValue[i]);
+#endif
+          arrived[i] = true;
+        }
+      }
+    }
+    lastMillis = currentMillis;
+  }
+}
+
+void ServoController::setEnabled(byte index, bool e) {
+  if (index >= SERVO_COUNT) {
+    return;
+  }
+  enabled[index] = e;
+}
+
+// LATER: theres some kind of bug in the overflow here that causes it
+// to clear out the next label.
+void ServoController::setLabel(byte index, char *label, byte labelSize) {
+  if (index >= SERVO_COUNT) {
+    return;
+  }
+  if (labelSize > SERVO_MAX_LABEL_SIZE) {
+    labelSize = SERVO_MAX_LABEL_SIZE;
+  }
+  for (byte i = 0; i < labelSize; i++) {
+    labels[index][i] = label[i];
+  }
+  labels[index][labelSize] = '\0';
+}
+
+void ServoController::move(byte index, byte val) {
+  if (index >= SERVO_COUNT) {
+    return;
+  }
+  targetValue[index] = pwmForVal(index, val);
+  arrived[index] = false;
+}
+
+void ServoController::set(byte index, byte val) {
+  if (index >= SERVO_COUNT) {
+    return;
+  }
+  uint16_t t = pwmForVal(index, val);
+  targetValue[index] = t;
+  currentValue[index] = t;
+  arrived[index] = false;
+}
+
+void ServoController::setLowerLimit(byte index, byte val) {
+  if (index >= SERVO_COUNT) {
+    return;
+  }
+  lowerLimit[index] = val;
+  if (targetValue[index] < pwmForVal(index, val)) {
+    targetValue[index] = pwmForVal(index, val);
+    arrived[index] = false;
+  }
+}
+
+void ServoController::setUpperLimit(byte index, byte val) {
+  if (index >= SERVO_COUNT) {
+    return;
+  }
+  upperLimit[index] = val;
+  if (targetValue[index] > pwmForVal(index, val)) {
+    targetValue[index] = pwmForVal(index, val);
+    arrived[index] = false;
+  }
+}
+
+uint16_t ServoController::stateDumpLength() {
+  byte headerSize = 2;
+  return headerSize + (SERVO_COUNT * SERVO_DUMP_BYTES_PER_SERVO);
+}
+
+// index should not be a number with more than SERVO_MAX_LABEL_SIZE - 2 digits
+// and buff must be at least SERVO_MAX_LABEL_SIZE bytes long
+// LATER: assert the above ^
+void ServoController::defaultLabel(byte index, volatile char *buff) {
+  sprintf((char *)buff, "S_%d", index);
+}
+
+// ret must be a buffer with at least stateDumpLength() bytes
+void ServoController::dumpState(byte *ret) {
+  ret[0] = SERVO_COUNT;
+  ret[1] = SERVO_MAX_LABEL_SIZE;
+
+  for (byte i = 0; i < SERVO_COUNT; i++) {
+    uint16_t minPWM = pwmForVal(i, 0);
+    uint16_t maxPWM = pwmForVal(i, 255);
+    uint16_t start = 2 + (i * SERVO_DUMP_BYTES_PER_SERVO);
+    ret[start] = enabled[i];
+    ret[start + 1] = lowerLimit[i];
+    ret[start + 2] = upperLimit[i];
+    ret[start + 3] = 0; // idle
+    ret[start + 4] = 0; // smooth
+    ret[start + 5] = map(currentValue[i], minPWM, maxPWM, 0, 255);
+    ret[start + 6] = map(targetValue[i], minPWM, maxPWM, 0, 255);
+    ret[start + 7] = arrived[i];
+    memcpy(&ret[start + 9], (char *)labels[i], SERVO_MAX_LABEL_SIZE);
+    ret[start + 9 + SERVO_MAX_LABEL_SIZE] = '\0';
+    ret[start + 8] = strlen((char *)&ret[start + 9]);
+  }
+}
+
+void ServoController::commitState() {
+  uint16_t len = stateDumpLength() + 2;
+  byte buff[len];
+  buff[0] = STATE_DUMP_EEPROM_HEADER[0];
+  buff[1] = STATE_DUMP_EEPROM_HEADER[1];
+  dumpState(&buff[2]);
+
+  prefs.begin("servo_state", false);
+  prefs.putBytes("state", buff, len);
+  prefs.end();
+}
+
+StateRestoreStatus ServoController::restoreFromStateDump() {
+  uint16_t len = stateDumpLength() + 2;
+  byte buff[len];
+
+  prefs.begin("servo_state", true);
+  prefs.getBytes("state", buff, len);
+  prefs.end();
+
+  // confirm the first 2 bytes
+  if (buff[0] != STATE_DUMP_EEPROM_HEADER[0] ||
+      buff[1] != STATE_DUMP_EEPROM_HEADER[1]) {
+    return SRS_INVALID_STATE_HEADER;
+  }
+
+  byte *b = buff + 2;
+  byte servoCount = b[0];
+  byte labelSize = b[1];
+  int destinationLabelSize = labelSize;
+  if (destinationLabelSize > SERVO_MAX_LABEL_SIZE) {
+    destinationLabelSize = SERVO_MAX_LABEL_SIZE;
+  }
+
+  if (servoCount > SERVO_COUNT) {
+    servoCount = SERVO_COUNT;
+  }
+  for (byte i = 0; i < SERVO_COUNT; i++) {
+    uint16_t start = 2 + (i * SERVO_DUMP_BYTES_PER_SERVO);
+    enabled[i] = b[start];
+    lowerLimit[i] = b[start + 1];
+    upperLimit[i] = b[start + 2];
+
+    uint16_t minPWM = pwmForVal(i, 0);
+    uint16_t maxPWM = pwmForVal(i, 255);
+
+    // skip 3 & 4 (idle & smooth)
+    currentValue[i] = map(b[start + 5], 0, 255, minPWM, maxPWM);
+    targetValue[i] = map(b[start + 6], 0, 255, minPWM, maxPWM);
+    arrived[i] = false;
+    for (byte j = 0; j < destinationLabelSize; j++) {
+      labels[i][j] = b[start + 9 + j];
+    }
+  }
+  return SRS_OK;
+}
