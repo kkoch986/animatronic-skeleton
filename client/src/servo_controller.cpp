@@ -50,42 +50,43 @@ bool ServoController::setup() {
 }
 
 uint16_t ServoController::pwmForVal(byte index, byte val) {
-  return pwmServos[index].pwmForAngle(map(
-      map(val, 0, 255, lowerLimit[index], upperLimit[index]), 0, 255, -90, 90));
+  return map(val, 0, 255, map(lowerLimit[index], 0, 255, 102, 512),
+             map(upperLimit[index], 0, 255, 102, 512));
 }
 
 void ServoController::loop() {
   uint32_t currentMillis = millis();
   bool updatePWM = currentMillis - lastMillis >= PWM_UPDATE_INTERVAL_MS;
   if (updatePWM) {
-    for (int i = 0; i < SERVO_COUNT; i++) {
-      if (!enabled[i]) {
-        continue;
-      }
-      if (!arrived[i]) {
-        if (currentValue[i] < targetValue[i]) {
-          currentValue[i] =
-              ceil(0.8 * currentValue[i]) + ceil(0.2 * targetValue[i]);
-          pwmController.setChannelPWM(i, currentValue[i]);
-#ifdef ENABLE_DEBUG
-          Serial.printf("set channel pwm %d %d\n", i, currentValue[i]);
-#endif
-        } else if (currentValue[i] > targetValue[i]) {
-          currentValue[i] =
-              floor(0.8 * currentValue[i]) + floor(0.2 * targetValue[i]);
-          pwmController.setChannelPWM(i, currentValue[i]);
-#ifdef ENABLE_DEBUG
-          Serial.printf("set channel pwm %d %d\n", i, currentValue[i]);
-#endif
-        } else {
-          pwmController.setChannelPWM(i, currentValue[i]);
-#ifdef ENABLE_DEBUG
-          Serial.printf("set channel pwm %d %d\n", i, currentValue[i]);
-#endif
-          arrived[i] = true;
-        }
-      }
+    uint16_t tv[SERVO_COUNT - 3];
+    for (int i = 0; i < SERVO_COUNT - 3; i++) {
+      tv[i] = targetValue[i];
     }
+    pwmController.setChannelsPWM(0, SERVO_COUNT - 3, tv);
+    /* for (int i = 0; i < SERVO_COUNT; i++) { */
+    /*   if (!enabled[i]) { */
+    /*     continue; */
+    /*   } */
+    /*   if (!arrived[i]) { */
+    /*     currentValue[i] = targetValue[i]; */
+    /*     pwmController.setChannelPWM(i, currentValue[i]); */
+    /*     arrived[i] = true; */
+    /*     /1* if (currentValue[i] < targetValue[i]) { *1/ */
+    /*     /1*   currentValue[i] = *1/ */
+    /*     /1*       ceil(0.8 * currentValue[i]) + ceil(0.2 * targetValue[i]);
+     * *1/ */
+    /*     /1*   pwmController.setChannelPWM(i, currentValue[i]); *1/ */
+    /*     /1* } else if (currentValue[i] > targetValue[i]) { *1/ */
+    /*     /1*   currentValue[i] = *1/ */
+    /*     /1*       floor(0.8 * currentValue[i]) + floor(0.2 * targetValue[i]);
+     * * *1/ */
+    /*     /1*   pwmController.setChannelPWM(i, currentValue[i]); *1/ */
+    /*     /1* } else { *1/ */
+    /*     /1*   pwmController.setChannelPWM(i, currentValue[i]); *1/ */
+    /*     /1*   arrived[i] = true; *1/ */
+    /*     /1* } *1/ */
+    /*   } */
+    /* } */
     lastMillis = currentMillis;
   }
 }

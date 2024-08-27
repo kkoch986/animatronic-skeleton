@@ -22,7 +22,6 @@ const byte STATE_DUMP_EEPROM_HEADER[] = {0xAA, 0x01};
 class ServoController {
 private:
   PCA9685 pwmController{PCA9685_I2C_ADDR};
-  PCA9685_ServoEval pwmServos[SERVO_COUNT];
   volatile bool enabled[SERVO_COUNT];
   volatile uint16_t targetValue[SERVO_COUNT];
   volatile uint16_t currentValue[SERVO_COUNT];
