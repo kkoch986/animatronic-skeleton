@@ -162,6 +162,9 @@ void setup() {
 
   // configure pins
   pinMode(ADDR_0, INPUT);
+  // NOTE: for some reason on skeleton-1 calling this pinMode causes the board
+  // to enter a reset loop so just comment this line out when compiling for that
+  // board
   pinMode(ADDR_1, INPUT);
   pinMode(ADDR_2, INPUT);
   pinMode(ADDR_3, INPUT);
