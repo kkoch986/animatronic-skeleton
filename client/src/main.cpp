@@ -12,11 +12,7 @@
 ServoController servoController;
 ConnectionManager connectionManager;
 
-// TODO: accept this as part of the wifimanager set up. also need a way to reset
-// it somehow
 WebSocketsClient webSocket;
-char webSocketHost[40] = "192.168.1.171";
-int webSocketPort = 8888;
 char controlAddr[32];
 byte address = 0;
 bool websocketConnected = false;
@@ -42,6 +38,8 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
 #endif
     break;
   case WStype_DISCONNECTED:
+    servoController.center();
+    servoController.setEyeColor(255, 0, 0);
     currentState = STATE_WEBSOCKET_CONNECTING;
     break;
   case WStype_CONNECTED:
@@ -98,6 +96,13 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
       servoController.set(index, val);
       break;
     }
+    case CT_EYE_COLOR: {
+      byte r = payload[2];
+      byte g = payload[3];
+      byte b = payload[4];
+      servoController.setEyeColor(r, g, b);
+      break;
+    }
     case CT_SET_ENABLED: {
       byte index = payload[2];
       byte val = payload[3];
@@ -138,6 +143,10 @@ void webSocketEvent(WStype_t type, uint8_t *payload, size_t length) {
       webSocket.sendBIN(resp, 2);
       break;
     }
+    case CT_RESTART: {
+      ESP.restart();
+      break;
+    }
     }
     break;
   }
@@ -161,6 +170,7 @@ void setup() {
 #endif
 
   // configure pins
+  pinMode(RESET_BUTTON, INPUT_PULLUP);
   pinMode(ADDR_0, INPUT);
   // NOTE: for some reason on skeleton-1 calling this pinMode causes the board
   // to enter a reset loop so just comment this line out when compiling for that
@@ -199,6 +209,8 @@ void setup() {
 
 void loop() {
   switch (currentState) {
+  case STATE_UNKNOWN:
+    break;
   case STATE_WIFI_CONNECTING:
     StatusLED::setColor(255, 0, 0);
     StatusLED::loop();
@@ -217,7 +229,8 @@ void loop() {
 #ifdef ENABLE_DEBUG
     Serial.printf("connecting to %s:%d\n", webSocketHost, webSocketPort);
 #endif
-    webSocket.begin(webSocketHost, webSocketPort, "/");
+    webSocket.begin(connectionManager.getWebSocketHost(),
+                    connectionManager.getWebSocketPort(), "/");
     currentState = STATE_WEBSOCKET_CONNECTING;
     break;
   case STATE_WEBSOCKET_CONNECTING:

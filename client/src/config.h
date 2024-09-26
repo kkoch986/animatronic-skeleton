@@ -17,6 +17,8 @@
 #define ADDR_2 5
 #define ADDR_3 4
 
+#define RESET_BUTTON 0
+
 // The total number of available servos
 #define SERVO_COUNT 16
 #define SERVO_MAX_LABEL_SIZE 8

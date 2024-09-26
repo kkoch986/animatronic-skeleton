@@ -5,6 +5,12 @@
 
 Preferences prefs;
 
+void ServoController::center() {
+  for (int i = 0; i < SERVO_COUNT; i++) {
+    targetValue[i] = centerValues[i];
+  }
+}
+
 bool ServoController::setup() {
   byte err;
   Wire.begin(PCA9685_I2C_SDA, PCA9685_I2C_SCL);
@@ -25,28 +31,25 @@ bool ServoController::setup() {
 
       // set arrived = true so nothing moves at first
       arrived[i] = true;
-      enabled[i] = true;
       targetValue[i] = pwmForVal(i, 0);
       currentValue[i] = pwmForVal(i, 127);
     }
   }
 
-  pwmController.setChannelPWM(13, 4096);
-  pwmController.setChannelPWM(14, 0);
-  pwmController.setChannelPWM(15, 0);
+  setEyeColor(255, 0, 0);
   delay(1000);
-  pwmController.setChannelPWM(13, 0);
-  pwmController.setChannelPWM(14, 4096);
-  pwmController.setChannelPWM(15, 0);
+  setEyeColor(0, 255, 0);
   delay(1000);
-  pwmController.setChannelPWM(13, 0);
-  pwmController.setChannelPWM(14, 0);
-  pwmController.setChannelPWM(15, 4096);
+  setEyeColor(0, 0, 255);
   delay(1000);
-  pwmController.setChannelPWM(13, 4096);
-  pwmController.setChannelPWM(14, 4096);
-  pwmController.setChannelPWM(15, 4096);
+  setEyeColor(255, 255, 255);
   return err == 0;
+}
+
+void ServoController::setEyeColor(byte r, byte g, byte b) {
+  pwmController.setChannelPWM(13, map(r, 0, 255, 0, 4096));
+  pwmController.setChannelPWM(14, map(g, 0, 255, 0, 4096));
+  pwmController.setChannelPWM(15, map(b, 0, 255, 0, 4096));
 }
 
 uint16_t ServoController::pwmForVal(byte index, byte val) {
@@ -58,35 +61,15 @@ void ServoController::loop() {
   uint32_t currentMillis = millis();
   bool updatePWM = currentMillis - lastMillis >= PWM_UPDATE_INTERVAL_MS;
   if (updatePWM) {
-    uint16_t tv[SERVO_COUNT - 3];
-    for (int i = 0; i < SERVO_COUNT - 3; i++) {
-      tv[i] = targetValue[i];
+    for (int i = 0; i < SERVO_COUNT; i++) {
+      if (!enabled[i]) {
+        continue;
+      }
+      if (!arrived[i]) {
+        pwmController.setChannelPWM(i, targetValue[i]);
+        arrived[i] = true;
+      }
     }
-    pwmController.setChannelsPWM(0, SERVO_COUNT - 3, tv);
-    /* for (int i = 0; i < SERVO_COUNT; i++) { */
-    /*   if (!enabled[i]) { */
-    /*     continue; */
-    /*   } */
-    /*   if (!arrived[i]) { */
-    /*     currentValue[i] = targetValue[i]; */
-    /*     pwmController.setChannelPWM(i, currentValue[i]); */
-    /*     arrived[i] = true; */
-    /*     /1* if (currentValue[i] < targetValue[i]) { *1/ */
-    /*     /1*   currentValue[i] = *1/ */
-    /*     /1*       ceil(0.8 * currentValue[i]) + ceil(0.2 * targetValue[i]);
-     * *1/ */
-    /*     /1*   pwmController.setChannelPWM(i, currentValue[i]); *1/ */
-    /*     /1* } else if (currentValue[i] > targetValue[i]) { *1/ */
-    /*     /1*   currentValue[i] = *1/ */
-    /*     /1*       floor(0.8 * currentValue[i]) + floor(0.2 * targetValue[i]);
-     * * *1/ */
-    /*     /1*   pwmController.setChannelPWM(i, currentValue[i]); *1/ */
-    /*     /1* } else { *1/ */
-    /*     /1*   pwmController.setChannelPWM(i, currentValue[i]); *1/ */
-    /*     /1*   arrived[i] = true; *1/ */
-    /*     /1* } *1/ */
-    /*   } */
-    /* } */
     lastMillis = currentMillis;
   }
 }
@@ -236,6 +219,7 @@ StateRestoreStatus ServoController::restoreFromStateDump() {
 
     // skip 3 & 4 (idle & smooth)
     currentValue[i] = map(b[start + 5], 0, 255, minPWM, maxPWM);
+    centerValues[i] = map(b[start + 5], 0, 255, minPWM, maxPWM);
     targetValue[i] = map(b[start + 6], 0, 255, minPWM, maxPWM);
     arrived[i] = false;
     for (byte j = 0; j < destinationLabelSize; j++) {

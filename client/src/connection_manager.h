@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ESP8266WiFi.h>
+#include <Preferences.h>
 #include <WiFiManager.h>
 
 enum ConnectionState {
@@ -15,6 +16,11 @@ private:
   volatile bool connected;
   char hostname[32];
   uint16_t otaPort;
+  char webSocketHost[40];
+  char webSocketPortStr[6];
+  uint16_t webSocketPort;
+  Preferences prefs;
+  bool shouldSaveConfig = false;
 
 public:
   void setup(char hostname[32], uint16_t otaPort);
@@ -22,4 +28,6 @@ public:
   ConnectionState currentState();
   void wipeConfig();
   void otaSetup();
+  char *getWebSocketHost();
+  uint16_t getWebSocketPort();
 };

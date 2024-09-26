@@ -5,7 +5,7 @@ ifdef PIOENV
 	ENVSTR=${PIOENV}
 endif
 
-IP="skeleton-0.local"
+IP="skeleton-3.local"
 
 compile:
 	${PIO} run -e ${ENVSTR}

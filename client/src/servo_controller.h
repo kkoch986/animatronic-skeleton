@@ -25,6 +25,7 @@ private:
   volatile bool enabled[SERVO_COUNT];
   volatile uint16_t targetValue[SERVO_COUNT];
   volatile uint16_t currentValue[SERVO_COUNT];
+  volatile uint16_t centerValues[SERVO_COUNT];
   volatile bool arrived[SERVO_COUNT];
   volatile int16_t lowerLimit[SERVO_COUNT];
   volatile int16_t upperLimit[SERVO_COUNT];
@@ -38,8 +39,10 @@ public:
   bool setup();
   void loop();
 
+  void center();
   void move(byte index, byte val);
   void set(byte index, byte val);
+  void setEyeColor(byte r, byte g, byte b);
 
   void setLowerLimit(byte index, byte val);
   void setUpperLimit(byte index, byte val);

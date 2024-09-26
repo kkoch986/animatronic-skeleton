@@ -1,5 +1,6 @@
 #include "connection_manager.h"
 
+#include "config.h"
 #include "status_led.h"
 #include <ArduinoOTA.h>
 
@@ -7,7 +8,7 @@
 // wifi config?
 
 void ConnectionManager::wipeConfig() {
-  wifiManager.erase();
+  /* wifiManager.erase(); */
   wifiManager.resetSettings();
   ESP.restart();
 }
@@ -16,16 +17,23 @@ ConnectionState ConnectionManager::currentState() {
   return connected ? CONNECTION_STATE_CONNECTED : CONNECTION_STATE_NEEDS_CONFIG;
 }
 
+char *ConnectionManager::getWebSocketHost() { return webSocketHost; }
+
+uint16_t ConnectionManager::getWebSocketPort() { return webSocketPort; }
+
 void ConnectionManager::setup(char _hostname[32], uint16_t _otaPort) {
   for (int i = 0; i < 32; i++) {
     hostname[i] = _hostname[i];
   }
   otaPort = _otaPort;
 
-  // TODO: set the hostname in the constructor
+  prefs.begin("connection_params", true);
+  prefs.getString("websocket_host", webSocketHost, 40);
+  prefs.getShort("websocket_port", webSocketPort);
+  prefs.end();
+
   WiFi.setHostname(hostname);
   wifiManager.setClass("invert");
-  wifiManager.setConfigPortalBlocking(false);
   connected = false;
   wifiManager.setAPCallback([this](WiFiManager *wm) {
 #ifdef ENABLE_DEBUG
@@ -35,22 +43,44 @@ void ConnectionManager::setup(char _hostname[32], uint16_t _otaPort) {
   });
   wifiManager.setSaveConfigCallback([this]() {
     connected = true;
+    shouldSaveConfig = true;
+    webSocketPort = atoi(webSocketPortStr);
 #ifdef ENABLE_DEBUG
     Serial.printf("SAVE CONFIG CALLBACK REACHED, connected = true");
 #endif
   });
+
+  WiFiManagerParameter webSocketHostParam(
+      "websocket_host", "WebSocket Hostname", "192.168.1.171", 40);
+  WiFiManagerParameter webSocketPortParam("websocket_port", "WebSocket Port",
+                                          "8888", 6);
+
+  wifiManager.addParameter(&webSocketHostParam);
+  wifiManager.addParameter(&webSocketPortParam);
   connected = wifiManager.autoConnect(hostname);
+
+  strcpy(webSocketHost, webSocketHostParam.getValue());
+  webSocketPort = atoi(webSocketPortParam.getValue());
+  shouldSaveConfig = true;
 }
 
 void ConnectionManager::loop() {
+  if (shouldSaveConfig) {
+    prefs.begin("connection_params", false);
+    prefs.putString("websocket_host", webSocketHost);
+    prefs.putShort("websocket_port", webSocketPort);
+    prefs.end();
+    shouldSaveConfig = false;
+  }
   wifiManager.process();
   ArduinoOTA.handle();
+
+  if (digitalRead(RESET_BUTTON) == LOW) {
+    wipeConfig();
+  }
 }
 
-// TODO: support the parameters
-
 void ConnectionManager::otaSetup() {
-  // TODO: parameterize this
   ArduinoOTA.setPort(otaPort);
   ArduinoOTA.setHostname(hostname);
 
@@ -75,13 +105,13 @@ void ConnectionManager::otaSetup() {
   });
 
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    // Fade the LED out as progress is completed
-    unsigned int pct = (progress / (total / 100));
-    /* byte color = 255 - (pct * 255) / 100; */
-    /* indicator.setColor(color, color, color); */
+  // Fade the LED out as progress is completed
 #ifdef ENABLE_DEBUG
+    unsigned int pct = (progress / (total / 100));
     Serial.printf("Progress: %u%%\r", pct);
 #endif
+    /* byte color = 255 - (pct * 255) / 100; */
+    /* indicator.setColor(color, color, color); */
   });
 
   ArduinoOTA.onError([](ota_error_t error) {

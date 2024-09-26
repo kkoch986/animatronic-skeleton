@@ -71,7 +71,13 @@ enum CommandType {
   // [ADDR][OP][SERVO_INDEX][LABEL_SIZE][LABEL]
   // Labels cannot exceed the SERVO_MAX_LABEL_SIZE
   // if one longer is provided, it will be truncated
-  CT_SET_LABEL
+  CT_SET_LABEL,
+  // CT_EYE_COLOR will set the color of the eyes
+  // message format is:
+  // [ADDR][OP][R][G][B]
+  CT_EYE_COLOR,
+  // CT_RESTART will reboot the device
+  CT_RESTART,
 };
 
 class WebSocketController {

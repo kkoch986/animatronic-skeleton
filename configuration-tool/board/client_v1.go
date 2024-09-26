@@ -27,6 +27,8 @@ const (
 	QUERY_MOTOR_STATE messageType = 0x0A
 	SETENABLED        messageType = 0x0B
 	SETLABEL          messageType = 0x0C
+	SET_EYE_COLOR     messageType = 0x0D
+	RESET             messageType = 0x0E
 )
 
 type stateRestoreStatus byte
