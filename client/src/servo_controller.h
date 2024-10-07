@@ -39,10 +39,16 @@ public:
   bool setup();
   void loop();
 
+  uint8_t motorCount();
+  bool isEnabled(byte index);
+
   void center();
   void move(byte index, byte val);
   void set(byte index, byte val);
   void setEyeColor(byte r, byte g, byte b);
+  void setEyeRed(byte r);
+  void setEyeGreen(byte g);
+  void setEyeBlue(byte b);
 
   void setLowerLimit(byte index, byte val);
   void setUpperLimit(byte index, byte val);

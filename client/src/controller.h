@@ -1,16 +1,4 @@
-#include <WebSocketsClient.h>
-
-// State holds the various states of execution that we can be in
-// Since everything is async, this allows us to have the loop operate
-// correctly and trigger transistions when necessary.
-enum State {
-  STATE_UNKNOWN,
-  STATE_WIFI_CONNECTING,
-  STATE_POST_WIFI_CONNECT,
-  STATE_WEBSOCKET_CONNECTING,
-  STATE_WEBSOCKET_CONNECTED,
-};
-State currentState = STATE_UNKNOWN;
+#pragma once
 
 // The various commands that we can handle over the websocket format
 // These should be provided as the first byte of a binary websocket message
@@ -78,17 +66,7 @@ enum CommandType {
   CT_EYE_COLOR,
   // CT_RESTART will reboot the device
   CT_RESTART,
-};
-
-class WebSocketController {
-private:
-  WebSocketsClient webSocket;
-  bool connected;
-  void webSocketEvent(WStype_t type, uint8_t *payload, size_t length);
-
-public:
-  bool setup();
-  void loop();
-
-  bool isConnected();
+  // CT_RESET will reset the wifi configuration and allow the device
+  // to be reconfigured
+  CT_RESET
 };

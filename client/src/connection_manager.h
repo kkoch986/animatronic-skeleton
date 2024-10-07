@@ -16,18 +16,24 @@ private:
   volatile bool connected;
   char hostname[32];
   uint16_t otaPort;
+
+#ifdef WEBSOCKET_CTRL
   char webSocketHost[40];
   char webSocketPortStr[6];
   uint16_t webSocketPort;
+#endif
+#ifdef DMX_CTRL
+  uint16_t dmxOffset;
+#endif
+
   Preferences prefs;
   bool shouldSaveConfig = false;
 
 public:
-  void setup(char hostname[32], uint16_t otaPort);
+  void setup(char _hostname[32], uint16_t _otaPort);
   void loop();
   ConnectionState currentState();
   void wipeConfig();
   void otaSetup();
-  char *getWebSocketHost();
-  uint16_t getWebSocketPort();
+  uint16_t getOTAPort() { return otaPort; }
 };

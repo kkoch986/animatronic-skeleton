@@ -47,9 +47,28 @@ bool ServoController::setup() {
 }
 
 void ServoController::setEyeColor(byte r, byte g, byte b) {
+  setEyeRed(r);
+  setEyeGreen(g);
+  setEyeBlue(b);
+}
+
+void ServoController::setEyeRed(byte r) {
   pwmController.setChannelPWM(13, map(r, 0, 255, 0, 4096));
+}
+void ServoController::setEyeGreen(byte g) {
   pwmController.setChannelPWM(14, map(g, 0, 255, 0, 4096));
+}
+void ServoController::setEyeBlue(byte b) {
   pwmController.setChannelPWM(15, map(b, 0, 255, 0, 4096));
+}
+
+uint8_t ServoController::motorCount() { return SERVO_COUNT; }
+
+bool ServoController::isEnabled(byte index) {
+  if (index >= SERVO_COUNT) {
+    return false;
+  }
+  return enabled[index];
 }
 
 uint16_t ServoController::pwmForVal(byte index, byte val) {
