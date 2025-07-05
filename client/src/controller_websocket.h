@@ -30,4 +30,5 @@ public:
   void setConectionManager(ConnectionManager *cm) { connectionManager = cm; }
   char *getHost() { return webSocketHost; }
   uint16_t getPort() { return webSocketPort; }
+  byte getAddress() { return address; }
 };

@@ -40,6 +40,7 @@ void _telnetWS() {
 #ifdef WEBSOCKET_CTRL
   telnet.printf("> ws host %s\n", webSocketController.getHost());
   telnet.printf("> ws port %d\n", webSocketController.getPort());
+  telnet.printf("> ws address 0x%02x\n", webSocketController.getAddress());
 #endif
 }
 
@@ -72,6 +73,48 @@ void _telnetPrefs() {
   prefs.end();
 }
 
+int consumeIntArg(String &cmd) {
+  int idx = cmd.indexOf(' ');
+  if (idx == -1) {
+    cmd = "";
+    return -1;
+  }
+  String arg = cmd.substring(0, idx);
+  cmd = cmd.substring(idx + 1);
+  return arg.toInt();
+}
+
+void _telnetMove(String cmd) {
+  // parse the 2 args out
+  int servoIndex = consumeIntArg(cmd);
+  int position = consumeIntArg(cmd);
+
+  if (servoIndex < 0 || servoIndex > 16) {
+    telnet.println("servo index must be between 0 and 16");
+    return;
+  }
+  if (position < 0 || position > 255) {
+    telnet.println("position must be between 0 and 255");
+    return;
+  }
+
+  // TODO: call the servo controller
+  servoController.move(servoIndex, position);
+}
+
+void _printHelp() {
+  telnet.println("Available commands:");
+  telnet.println("  dmx - print info from the dmx controller");
+  telnet.println("  ws - print info about the websocket controller");
+  telnet.println("  net - print network info");
+  telnet.println(
+      "  move <servo index 0-16> <position 0 - 255> - move a particular servo");
+  telnet.println("  prefs - print saved preferences");
+  telnet.println("  restart - restart the device");
+  telnet.println("  reset - reset the saved wifimanager configuration");
+  telnet.println("  help - print this help message");
+}
+
 void onTelnetInput(String str) {
   // checks for a certain command
   if (str == "dmx") {
@@ -86,17 +129,12 @@ void onTelnetInput(String str) {
     ESP.restart();
   } else if (str == "reset") {
     connectionManager.wipeConfig();
+  } else if (str.startsWith("move")) {
+    _telnetMove(str.substring(5));
   } else if (str == "help") {
-    telnet.println("Available commands:");
-    telnet.println("  dmx - print info from the dmx controller");
-    telnet.println("  ws - print info about the websocket controller");
-    telnet.println("  net - print network info");
-    telnet.println("  prefs - print saved preferences");
-    telnet.println("  restart - restart the device");
-    telnet.println("  reset - reset the saved wifimanager configuration");
-    telnet.println("  help - print this help message");
+    _printHelp();
   } else {
-    telnet.printf("unknown command '%s' (try 'help' for a list of commands)\n",
-                  str);
+    telnet.printf("unknown command '%s'\n\n", str);
+    _printHelp();
   }
 }
