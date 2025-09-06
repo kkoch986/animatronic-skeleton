@@ -71,6 +71,54 @@ bool ServoController::isEnabled(byte index) {
   return enabled[index];
 }
 
+byte ServoController::getCurrentPosition(byte index) {
+  if (index >= SERVO_COUNT) {
+    return 0;
+  }
+  uint16_t minPWM = pwmForVal(index, 0);
+  uint16_t maxPWM = pwmForVal(index, 255);
+  return map(currentValue[index], minPWM, maxPWM, 0, 255);
+}
+
+byte ServoController::getTargetPosition(byte index) {
+  if (index >= SERVO_COUNT) {
+    return 0;
+  }
+  uint16_t minPWM = pwmForVal(index, 0);
+  uint16_t maxPWM = pwmForVal(index, 255);
+  return map(targetValue[index], minPWM, maxPWM, 0, 255);
+}
+
+byte ServoController::getCenterPosition(byte index) {
+  if (index >= SERVO_COUNT) {
+    return 0;
+  }
+  uint16_t minPWM = pwmForVal(index, 0);
+  uint16_t maxPWM = pwmForVal(index, 255);
+  return map(centerValues[index], minPWM, maxPWM, 0, 255);
+}
+
+byte ServoController::getLowerLimit(byte index) {
+  if (index >= SERVO_COUNT) {
+    return 0;
+  }
+  return lowerLimit[index];
+}
+
+byte ServoController::getUpperLimit(byte index) {
+  if (index >= SERVO_COUNT) {
+    return 255;
+  }
+  return upperLimit[index];
+}
+
+bool ServoController::hasArrived(byte index) {
+  if (index >= SERVO_COUNT) {
+    return true;
+  }
+  return arrived[index];
+}
+
 uint16_t ServoController::pwmForVal(byte index, byte val) {
   return map(val, 0, 255, map(lowerLimit[index], 0, 255, 102, 512),
              map(upperLimit[index], 0, 255, 102, 512));
@@ -188,6 +236,13 @@ void ServoController::dumpState(byte *ret) {
     ret[start + 9 + SERVO_MAX_LABEL_SIZE] = '\0';
     ret[start + 8] = strlen((char *)&ret[start + 9]);
   }
+}
+
+char *ServoController::getLabel(byte index) {
+  if (index >= SERVO_COUNT) {
+    return nullptr;
+  }
+  return (char *)labels[index];
 }
 
 void ServoController::commitState() {

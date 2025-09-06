@@ -50,3 +50,10 @@ void DMXController::loop() {
     }
   }
 }
+
+uint8_t DMXController::getDMXValue(uint16_t slot) {
+  if (slot >= 512) {
+    return 0;
+  }
+  return ESP8266DMX.getSlot(slot);
+}

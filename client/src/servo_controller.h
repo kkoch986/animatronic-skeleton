@@ -41,6 +41,12 @@ public:
 
   uint8_t motorCount();
   bool isEnabled(byte index);
+  byte getCurrentPosition(byte index);
+  byte getTargetPosition(byte index);
+  byte getCenterPosition(byte index);
+  byte getLowerLimit(byte index);
+  byte getUpperLimit(byte index);
+  bool hasArrived(byte index);
 
   void center();
   void move(byte index, byte val);
@@ -54,6 +60,8 @@ public:
   void setUpperLimit(byte index, byte val);
   void setEnabled(byte index, bool enabled);
   void setLabel(byte index, char *label, byte labelSize);
+
+  char *getLabel(byte index);
 
   // buff must be a buffer with at least stateDumpLength() bytes
   // copies a structured byte array into buff

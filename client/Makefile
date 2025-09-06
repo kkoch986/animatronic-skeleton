@@ -5,7 +5,7 @@ ifdef PIOENV
 	ENVSTR=${PIOENV}
 endif
 
-IP="skeleton-3.local"
+IP="skeleton-1.local"
 
 compile: platformio.ini src/**
 	${PIO} run -e ${ENVSTR}

@@ -1,3 +1,4 @@
+#include "config.h"
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <Preferences.h>
@@ -29,10 +30,61 @@ void onTelnetConnectionAttempt(String ip) {
   Serial.println(" tried to connected");
 }
 
-void _telnetDMX() {
+void _telnetDMX(String arg) {
 #ifdef DMX_CTRL
+  if (arg.length() > 0) {
+    int newOffset = arg.toInt();
+    if (newOffset < 1 || newOffset > 512) {
+      telnet.println("DMX offset must be between 1 and 512");
+      return;
+    }
+    DMXController::getInstance()->setDMXOffset(newOffset);
+    // store it in prefs
+    Preferences prefs;
+    prefs.begin("connection_params", false);
+    prefs.putUChar("dmx_offset", newOffset);
+    prefs.end();
+    telnet.printf("Set DMX offset to %d\n", newOffset);
+  }
+
   telnet.printf("> dmxc offset %d\n",
                 DMXController::getInstance()->getDMXOffset());
+#endif
+}
+
+void _telnetDMXValues() {
+#ifdef DMX_CTRL
+  uint8_t offset = DMXController::getInstance()->getDMXOffset();
+  telnet.println("Current DMX Values:");
+  telnet.println("┌──────┬───────┬─────────┬──────────────────────────────┐");
+  telnet.println("│ Slot │ Value │ Purpose │ Description                  │");
+  telnet.println("├──────┼───────┼─────────┼──────────────────────────────┤");
+
+  // Show eye colors (first 3 slots)
+  telnet.printf("│ %3d  │  %3d  │ Eye Red │ Red component of eye color   │\n",
+                offset, DMXController::getInstance()->getDMXValue(offset));
+  telnet.printf("│ %3d  │  %3d  │ Eye Grn │ Green component of eye color │\n",
+                offset + 1,
+                DMXController::getInstance()->getDMXValue(offset + 1));
+  telnet.printf("│ %3d  │  %3d  │ Eye Blu │ Blue component of eye color  │\n",
+                offset + 2,
+                DMXController::getInstance()->getDMXValue(offset + 2));
+
+  // Show servo values (slots 3 and up)
+  for (int i = 3; i < SERVO_COUNT; i++) {
+    int servoIndex = i - 3;
+    uint8_t dmxValue = DMXController::getInstance()->getDMXValue(offset + i);
+    char *label = servoController.getLabel(servoIndex);
+    bool enabled = servoController.isEnabled(servoIndex);
+
+    telnet.printf("│ %3d  │  %3d  │ Servo%2d │ %-7s %s                  │\n",
+                  offset + i, dmxValue, servoIndex, label ? label : "N/A",
+                  enabled ? "(EN)" : "(DIS)");
+  }
+
+  telnet.println("└──────┴───────┴─────────┴──────────────────────────────┘");
+#else
+  telnet.println("DMX controller not enabled in this build");
 #endif
 }
 
@@ -102,14 +154,42 @@ void _telnetMove(String cmd) {
   servoController.move(servoIndex, position);
 }
 
+void _telnetServo() {
+  telnet.println("Servo Controller Status:");
+  telnet.println(
+      "┌────┬────────┬─────┬──────┬──────┬──────┬─────┬─────┬─────────┐");
+  telnet.println(
+      "│ ID │ Label  │ EN  │ Curr │ Targ │ Cntr │ Min │ Max │ Arrived │");
+  telnet.println(
+      "├────┼────────┼─────┼──────┼──────┼──────┼─────┼─────┼─────────┤");
+
+  for (int i = 0; i < SERVO_COUNT; i++) {
+    telnet.printf(
+        "│%3d │ %-6s │ %-3s │ %3d  │ %3d  │ %3d  │ %3d │ %3d │ %-7s │\n", i,
+        servoController.getLabel(i), servoController.isEnabled(i) ? "Y" : "N",
+        servoController.getCurrentPosition(i),
+        servoController.getTargetPosition(i),
+        servoController.getCenterPosition(i), servoController.getLowerLimit(i),
+        servoController.getUpperLimit(i),
+        servoController.hasArrived(i) ? "Y" : "N");
+  }
+
+  telnet.println(
+      "└────┴────────┴─────┴──────┴──────┴──────┴─────┴─────┴─────────┘");
+}
+
 void _printHelp() {
   telnet.println("Available commands:");
-  telnet.println("  dmx - print info from the dmx controller");
+  telnet.println("  dmx [<dmx addr>] - print info from the dmx controller. if "
+                 "provided, will set and store the provided address");
+  telnet.println(
+      "  dmxvalues - print current dmx values for all servos and eye colors");
   telnet.println("  ws - print info about the websocket controller");
   telnet.println("  net - print network info");
   telnet.println(
       "  move <servo index 0-16> <position 0 - 255> - move a particular servo");
   telnet.println("  prefs - print saved preferences");
+  telnet.println("  servo - print info about servo configuration");
   telnet.println("  restart - restart the device");
   telnet.println("  reset - reset the saved wifimanager configuration");
   telnet.println("  help - print this help message");
@@ -117,8 +197,12 @@ void _printHelp() {
 
 void onTelnetInput(String str) {
   // checks for a certain command
-  if (str == "dmx") {
-    _telnetDMX();
+  if (str.startsWith("dmx ")) {
+    _telnetDMX(str.substring(4));
+  } else if (str == "servo") {
+    _telnetServo();
+  } else if (str == "dmxvalues") {
+    _telnetDMXValues();
   } else if (str == "ws") {
     _telnetWS();
   } else if (str == "net") {

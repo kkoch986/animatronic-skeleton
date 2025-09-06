@@ -23,4 +23,5 @@ public:
   void setServoController(ServoController *sc) { servoController = sc; }
   void setDMXOffset(uint8_t offset) { dmxOffset = offset; }
   uint8_t getDMXOffset() { return dmxOffset; }
+  uint8_t getDMXValue(uint16_t slot);
 };

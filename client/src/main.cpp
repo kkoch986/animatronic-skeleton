@@ -67,7 +67,7 @@ void setup() {
   // NOTE: for some reason on skeleton-1 calling this pinMode causes the board
   // to enter a reset loop so just comment this line out when compiling for that
   // board
-  pinMode(ADDR_1, INPUT);
+  /* pinMode(ADDR_1, INPUT); */
   pinMode(ADDR_2, INPUT);
   pinMode(ADDR_3, INPUT);
 
@@ -133,7 +133,9 @@ void loop() {
 #ifdef REMOTE_DEBUG
   telnet.loop();
 #endif
+#ifdef WEBSOCKET_CTRL
   webSocketController.loop();
+#endif
 #ifdef DMX_CTRL
   DMXController::getInstance()->loop();
 #endif
